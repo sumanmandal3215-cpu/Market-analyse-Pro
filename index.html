@@ -1,0 +1,43 @@
+//@version=5
+indicator("Pocket Option Pro Analyzer - Realtime", overlay=true)
+
+// --- সেটিংস ---
+emaFast = input.int(7, "Fast Trend (7)", minval=1)
+emaSlow = input.int(25, "Slow Trend (25)", minval=1)
+rsiLen = input.int(14, "RSI Length", minval=1)
+
+// --- ক্যালকুলেশন ---
+ema7 = ta.ema(close, emaFast)
+ema25 = ta.ema(close, emaSlow)
+rsi = ta.rsi(close, rsiLen)
+
+// সাপোর্ট ও রেজিস্ট্যান্স (অটো জোন)
+highRes = ta.highest(high, 15)[1]
+lowSup = ta.lowest(low, 15)[1]
+
+// --- বাই/সেল লজিক (মার্কেট এনালাইসিস) ---
+// বাই হবে যখন: ৭ ইএমএ ২৫ ইএমএ কে ক্রস করবে এবং আরএসআই ৫০ এর উপরে থাকবে
+buyCondition = ta.crossover(ema7, ema25) and rsi > 50
+// সেল হবে যখন: ৭ ইএমএ ২৫ ইএমএ কে নিচে ক্রস করবে এবং আরএসআই ৫০ এর নিচে থাকবে
+sellCondition = ta.crossunder(ema7, ema25) and rsi < 50
+
+// --- চার্ট ড্রয়িং (ফিচারসমূহ) ---
+
+// ১. ট্রেন্ড লাইন
+plot(ema7, color=color.new(color.aqua, 0), linewidth=2, title="Fast Line")
+plot(ema25, color=color.new(color.orange, 0), linewidth=2, title="Slow Line")
+
+// ২. সাপোর্ট ও রেজিস্ট্যান্স লেভেল (লাইভ মুভমেন্ট)
+plot(highRes, "Resistance", color=color.new(color.red, 60), style=plot.style_linebr)
+plot(lowSup, "Support", color=color.new(color.green, 60), style=plot.style_linebr)
+
+// ৩. সিগন্যাল লেবেল
+plotshape(buyCondition, title="BUY SIGNAL", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY CALL", textcolor=color.white, size=size.small)
+plotshape(sellCondition, title="SELL SIGNAL", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL PUT", textcolor=color.white, size=size.small)
+
+// ৪. ক্যান্ডেলস্টিক কালার (ট্রেন্ড বোঝার জন্য)
+barcolor(close > ema7 ? color.green : color.red)
+
+// ৫. অ্যালার্ট (পকেট অপশনের জন্য)
+alertcondition(buyCondition, "Buy Signal", "Call Trade Now!")
+alertcondition(sellCondition, "Sell Signal", "Put Trade Now!")
